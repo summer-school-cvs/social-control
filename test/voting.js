@@ -15,11 +15,23 @@ contract("Voting", (accounts) => {
         assert.equal(proposal[0], 1, "contains the correct id")
         // 1 field is a name
         assert.equal(proposal[1], "White", "contains the correct name")
-        assert.equal(proposal[2], 0, "contains the correct votes count")
+        assert.equal(proposal[3], 0, "contains the correct votes count")
         // check second
         proposal = await instance.proposals(2)
         assert.equal(proposal[0], 2, "contains the correct id")
         assert.equal(proposal[1], "Black", "contains the correct name")
-        assert.equal(proposal[2], 0, "contains the correct votes count")
+        // can check [2] = description 
+        assert.equal(proposal[3], 0, "contains the correct votes count")
+    })
+
+    it("Allows to cast a vote", async () => {
+        instance = await Voting.deployed()
+        proposal = 1
+        receipt = await instance.vote(proposal, 4, { from: accounts[0] })
+        voted = await instance.voters(accounts[0])
+        assert(voted, "was marked (voted, can't vote anymore)")
+        candidate = await instance.proposals(proposal)
+        voteCount = candidate[3]
+        assert.equal(voteCount, 4, "Increments by votePower ")
     })
 })
