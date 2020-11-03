@@ -24,6 +24,16 @@ contract("Voting", (accounts) => {
         assert.equal(proposal[3], 0, "contains the correct votes count")
     })
 
+    it("Initializes with valid discard", async () => {
+        instance = await Voting.deployed()
+        //check first
+        discard = await instance.discards(0)
+        assert.equal(discard[0], 0, "contains the correct id")
+        // 1 field is a name
+        assert.equal(discard[1], "Discard", "contains the correct name")
+        assert.equal(discard[2], 0, "contains the correct votes count")
+    })
+
     it("Allows to cast a vote", async () => {
         instance = await Voting.deployed()
         proposal = 1
@@ -33,5 +43,14 @@ contract("Voting", (accounts) => {
         candidate = await instance.proposals(proposal)
         voteCount = candidate[3]
         assert.equal(voteCount, 4, "Increments by votePower ")
+    })
+
+    it("Allows to end a voting", async () => {
+        instance = await Voting.deployed()
+        init = await instance.Ended()
+        assert.equal(init, false, "Creates a valid Ended state")
+        end = await instance.endVote()
+        endResult = await instance.Ended()
+        assert.equal(endResult, true, "Allows to end voting")
     })
 })
