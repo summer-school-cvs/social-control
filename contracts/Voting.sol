@@ -1,8 +1,12 @@
+// TODO: create a function that auto-initializes all proposals (factory?)
+
 pragma solidity >=0.5.0;
 
 contract Voting {
     string public name;
     string public description;
+    bool public Ended;
+    address public votingCreator;
 
     struct Proposal {
         uint8 id;
@@ -23,8 +27,9 @@ contract Voting {
 
     uint8 public proposalsCount;
 
-    // TODO: automatically init constructor: factory/voting ???
     constructor() public {
+        votingCreator = msg.sender;
+        Ended = false;
         addProposal("White", "wall color");
         addProposal("Black", "wall color");
         addDiscard("Discard");
@@ -47,10 +52,12 @@ contract Voting {
     }
 
     function vote(uint8 _proposalId, uint16 votePower) public {
-        // check that never voted
+        require(!Ended);
+
+        // check that voter had never voted
         require(!voters[msg.sender]);
 
-        // only valid id of candidate
+        // only valid id of proposal
         require(_proposalId > 0 && _proposalId <= proposalsCount);
 
         // record that address has voted
@@ -65,5 +72,10 @@ contract Voting {
         voters[msg.sender] = true;
 
         discards[0].voteCount += votePower;
+    }
+
+    function endVote() public {
+        require(msg.sender == votingCreator);
+        Ended = true;
     }
 }
