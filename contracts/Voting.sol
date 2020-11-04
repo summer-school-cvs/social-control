@@ -1,12 +1,18 @@
-// TODO: create a function that auto-initializes all proposals (factory?)
-
+/* TODO: 
+1. create a function that configure consructor,  (factory?)
+2. authorization by owner with incoming array
+*/
 pragma solidity >=0.5.0;
 
 contract Voting {
-    string public name;
+    bytes32 public name;
     string public description;
-    bool public Ended;
     address public votingCreator;
+
+    // restrictions
+    bool public Ended;
+    uint256 public votingEndTime;
+    bool public authByOwner;
 
     struct Proposal {
         uint8 id;
@@ -21,15 +27,22 @@ contract Voting {
         uint256 voteCount;
     }
 
+    struct Voter {
+        bool voted;
+        uint16 votePower;
+    }
+
     mapping(uint8 => Proposal) public proposals;
     mapping(uint8 => Discard) public discards;
-    mapping(address => bool) public voters;
+    mapping(address => Voter) public voters;
 
     uint8 public proposalsCount;
 
-    constructor() public {
+    constructor(uint256 _durationMinutes, bool _authByOwner) public {
         votingCreator = msg.sender;
         Ended = false;
+        authByOwner = _authByOwner;
+        votingEndTime = block.timestamp + (_durationMinutes * 1 minutes);
         addProposal("White", "wall color");
         addProposal("Black", "wall color");
         addDiscard("Discard");
@@ -51,27 +64,48 @@ contract Voting {
         discards[0] = Discard(0, _name, 0);
     }
 
-    function vote(uint8 _proposalId, uint16 votePower) public {
-        require(!Ended);
-
-        // check that voter had never voted
-        require(!voters[msg.sender]);
-
-        // only valid id of proposal
-        require(_proposalId > 0 && _proposalId <= proposalsCount);
-
-        // record that address has voted
-        voters[msg.sender] = true;
-
-        // increase vote count for proposal
-        proposals[_proposalId].voteCount += votePower;
+    function autoAuthorize() public {
+        require(!authByOwner, "Auto-auth is prohibited by creator.");
+        voters[msg.sender].voted = false;
+        // Default (not delegate)
+        voters[msg.sender].votePower = 1;
     }
 
-    function discard(uint16 votePower) public {
-        require(!voters[msg.sender]);
-        voters[msg.sender] = true;
+    function authorize(address _voterAdress) public {
+        require(msg.sender == votingCreator);
+        voters[_voterAdress].voted = false;
+        // Default (not delegate)
+        voters[_voterAdress].votePower = 1;
+    }
 
-        discards[0].voteCount += votePower;
+    function vote(uint8 _proposalId) public {
+        require(!Ended, "Voting was ended by creator.");
+        require(block.timestamp < votingEndTime, "Voting is over.");
+
+        // check that voter had never voted
+        require(!voters[msg.sender].voted, "Voter already voted.");
+
+        // only valid id of proposal
+        require(
+            _proposalId > 0 && _proposalId <= proposalsCount,
+            "Incorrect ID of the proposal."
+        );
+
+        // record that address has voted
+        voters[msg.sender].voted = true;
+
+        // increase vote count for proposal
+        proposals[_proposalId].voteCount += voters[msg.sender].votePower;
+    }
+
+    function discard() public {
+        require(!Ended, "Voting was ended by creator.");
+        require(block.timestamp < votingEndTime, "Voting is over.");
+        require(!voters[msg.sender].voted, "Voter already voted.");
+
+        voters[msg.sender].voted = true;
+
+        discards[0].voteCount += voters[msg.sender].votePower;
     }
 
     function endVote() public {
