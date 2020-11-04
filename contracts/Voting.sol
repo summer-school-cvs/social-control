@@ -1,12 +1,6 @@
-/* TODO: 
-1. create a function that configure consructor,  (factory?)
-2. authorization by owner with incoming array
-*/
 pragma solidity >=0.5.0;
 
 contract Voting {
-    bytes32 public name;
-    string public description;
     address public votingCreator;
 
     // restrictions
