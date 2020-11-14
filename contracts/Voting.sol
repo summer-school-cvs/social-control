@@ -25,11 +25,14 @@ contract Voting {
 
     struct Voter {
         uint16 votePower;
+        bool authorized;
     }
-    
+
     struct Decision {
         uint16 prevVotePower;
         uint8 proposalId;
+        bool discard;
+        bool exists;
     }
 
     mapping(uint8 => Proposal) public proposals;
@@ -39,7 +42,11 @@ contract Voting {
 
     uint8 public proposalsCount;
 
-    constructor(uint16 _validPercent, uint256 _durationMinutes, bool _authByOwner) public {
+    constructor(
+        uint16 _validPercent,
+        uint256 _durationMinutes,
+        bool _authByOwner
+    ) public {
         votingCreator = msg.sender;
         Ended = false;
         authByOwner = _authByOwner;
@@ -70,18 +77,24 @@ contract Voting {
         require(!authByOwner, "Auto-auth is prohibited by creator.");
         // Default (not delegate)
         voters[msg.sender].votePower = 1;
+        voters[msg.sender].authorized = true;
     }
 
+    // by array??
     function authorize(address _voterAdress) public {
         require(msg.sender == votingCreator);
         // Default (not delegate)
         voters[_voterAdress].votePower = 1;
+        voters[msg.sender].authorized = true;
     }
 
     function vote(uint8 _proposalId) public {
         require(!Ended, "Voting was ended by creator.");
         require(block.timestamp < votingEndTime, "Voting is over.");
-
+        if (!authByOwner) {
+            autoAuthorize();
+        }
+        require(voters[msg.sender].authorized);
         // only valid id of proposal
         require(
             _proposalId > 0 && _proposalId <= proposalsCount,
@@ -89,23 +102,38 @@ contract Voting {
         );
 
         // check if user has a previous decision
-        if (decisions[msg.sender]) {
-            // change proposal count with previous decision (return to state without sender adress vote)
-            proposals[decisions[msg.sender].proposalId].voteCount -= decisions[msg.sender].prevVotePower;
+        if (decisions[msg.sender].exists) {
+            if (decisions[msg.sender].discard = true) {
+                decisions[msg.sender].discard = false;
+                discards[0].voteCount -= decisions[msg.sender].prevVotePower;
+                decisions[msg.sender].proposalId = _proposalId;
+                decisions[msg.sender].prevVotePower = voters[msg.sender]
+                    .votePower;
+                proposals[_proposalId].voteCount += voters[msg.sender]
+                    .votePower;
+            } else {
+                // change proposal count with previous decision (return to state without sender adress vote)
+                proposals[decisions[msg.sender].proposalId]
+                    .voteCount -= decisions[msg.sender].prevVotePower;
 
-            // write new decision
-            decisions[msg.sender].proposalId = _proposalId
+                // write new decision
+                decisions[msg.sender].proposalId = _proposalId;
 
-            // vote power in decision becomes a previous for next vote by adress
-            // current vote power may be different
-            decisions[msg.sender].prevVotePower = voters[msg.sender].votePower
-            
-            // now, when we wrote current vote power -> add it to proposal count
-            proposals[_proposalId].voteCount += voters[msg.sender].votePower;
+                // vote power in decision becomes a previous for next vote by adress
+                // current vote power may be different
+                decisions[msg.sender].prevVotePower = voters[msg.sender]
+                    .votePower;
+
+                // now, when we wrote current vote power -> add it to proposal count
+                proposals[_proposalId].voteCount += voters[msg.sender]
+                    .votePower;
+            }
         } else {
             // voting first time
-            decisions[msg.sender].prevVotePower = voters[msg.sender].votePower
-            decisions[msg.sender].proposalId = _proposalId
+            decisions[msg.sender].prevVotePower = voters[msg.sender].votePower;
+            decisions[msg.sender].proposalId = _proposalId;
+            decisions[msg.sender].exists = true;
+
             proposals[_proposalId].voteCount += voters[msg.sender].votePower;
         }
     }
@@ -113,8 +141,28 @@ contract Voting {
     function discard() public {
         require(!Ended, "Voting was ended by creator.");
         require(block.timestamp < votingEndTime, "Voting is over.");
+        if (!authByOwner) {
+            autoAuthorize();
+        }
+        require(voters[msg.sender].authorized);
 
-        discards[0].voteCount += voters[msg.sender].votePower;
+        if (decisions[msg.sender].exists) {
+            proposals[decisions[msg.sender].proposalId]
+                .voteCount -= decisions[msg.sender].prevVotePower;
+
+            decisions[msg.sender].discard = true;
+            decisions[msg.sender].prevVotePower = voters[msg.sender].votePower;
+            // change to invalid proposal id
+            decisions[msg.sender].proposalId = 0;
+
+            discards[0].voteCount += voters[msg.sender].votePower;
+        } else {
+            decisions[msg.sender].prevVotePower = voters[msg.sender].votePower;
+            decisions[msg.sender].exists = true;
+            decisions[msg.sender].discard = true;
+
+            discards[0].voteCount += voters[msg.sender].votePower;
+        }
     }
 
     function endVote() public {
