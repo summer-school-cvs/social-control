@@ -8,7 +8,8 @@ contract Voting {
     uint256 private votingEndTime;
     bool public authByOwner;
     // defines a percent of votes to win
-    uint16 private validPercent;
+    uint16 private winPercent;
+    uint16 private discardPercent; 
 
     struct Proposal {
         uint8 id;
@@ -35,15 +36,16 @@ contract Voting {
         bool exists;
     }
 
-    mapping(uint8 => Proposal) public proposals;
-    mapping(uint8 => Discard) public discards;
+    mapping(uint256 => Proposal) public proposals;
+    mapping(uint256 => Discard) public discards;
     mapping(address => Voter) public voters;
     mapping(address => Decision) public decisions;
 
     uint8 public proposalsCount;
 
     constructor(
-        uint16 _validPercent,
+        uint16 _winPercent,
+        uint16 _discardPercent,
         uint256 _durationMinutes,
         bool _authByOwner
     ) public {
@@ -51,7 +53,8 @@ contract Voting {
         Ended = false;
         authByOwner = _authByOwner;
         votingEndTime = block.timestamp + (_durationMinutes * 1 minutes);
-        validPercent = _validPercent;
+        winPercent = _winPercent;
+        discardPercent = _discardPercent;
         addProposal("White", "wall color");
         addProposal("Black", "wall color");
         addDiscard("Discard");
@@ -162,6 +165,23 @@ contract Voting {
             decisions[msg.sender].discard = true;
 
             discards[0].voteCount += voters[msg.sender].votePower;
+        }
+    }
+
+    function getWinner() private {
+        uint256 totalVotes = 0;  
+        for (uint8 i = 1; i <= proposalsCount; i++) {
+            totalVotes += proposals[i].voteCount; 
+        }
+
+        if (discards[0].voteCount/totalVotes > discardPercent) {
+            // do something
+        }
+
+        for (uint8 i = 1; i <= proposalsCount; i++) {
+            if (proposals[i].voteCount/totalVotes > winPercent) {
+                // do something 
+            }
         }
     }
 
