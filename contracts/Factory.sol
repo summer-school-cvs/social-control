@@ -2,6 +2,8 @@ pragma solidity >=0.5.0;
 
 import "./Voting.sol";
 
+// import "./Delegation.sol";
+
 contract Factory {
     struct MemberInfo {
         address[] supportive;
@@ -68,8 +70,10 @@ contract Factory {
     }
 
     function createVoting() public {
-        Voting voting = new Voting(70, 100, false);
+        Voting voting = new Voting(70, 30, 100, false);
         votings[address(voting)] = msg.sender;
+        // create delegation for voting instance
+        // Delegation delegation = new Delegation(address(voting));
     }
 
     function execute(address vote) public {

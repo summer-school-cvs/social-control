@@ -9,7 +9,7 @@ contract Voting {
     bool public authByOwner;
     // defines a percent of votes to win
     uint16 private winPercent;
-    uint16 private discardPercent; 
+    uint16 private discardPercent;
 
     struct Proposal {
         uint8 id;
@@ -27,6 +27,9 @@ contract Voting {
     struct Voter {
         uint16 votePower;
         bool authorized;
+        bool isDelegate;
+        bool delegated;
+        address delegatedTo;
     }
 
     struct Decision {
@@ -79,14 +82,17 @@ contract Voting {
     function autoAuthorize() public {
         require(!authByOwner, "Auto-auth is prohibited by creator.");
         // Default (not delegate)
-        voters[msg.sender].votePower = 1;
-        voters[msg.sender].authorized = true;
+        if (!voters[msg.sender].authorized) {
+            voters[msg.sender].votePower = 1;
+            voters[msg.sender].authorized = true;
+        }
     }
 
-    // by array??
+    //? by array
     function authorize(address _voterAdress) public {
         require(msg.sender == votingCreator);
-        // Default (not delegate)
+        // need this, because otherwise creator can decrease the power
+        require(!voters[_voterAdress].authorized, "Already authorized");
         voters[_voterAdress].votePower = 1;
         voters[msg.sender].authorized = true;
     }
@@ -109,41 +115,30 @@ contract Voting {
             if (decisions[msg.sender].discard = true) {
                 decisions[msg.sender].discard = false;
                 discards[0].voteCount -= decisions[msg.sender].prevVotePower;
-                decisions[msg.sender].proposalId = _proposalId;
-                decisions[msg.sender].prevVotePower = voters[msg.sender]
-                    .votePower;
-                proposals[_proposalId].voteCount += voters[msg.sender]
-                    .votePower;
             } else {
                 // change proposal count with previous decision (return to state without sender adress vote)
                 proposals[decisions[msg.sender].proposalId]
                     .voteCount -= decisions[msg.sender].prevVotePower;
-
-                // write new decision
-                decisions[msg.sender].proposalId = _proposalId;
-
-                // vote power in decision becomes a previous for next vote by adress
-                // current vote power may be different
-                decisions[msg.sender].prevVotePower = voters[msg.sender]
-                    .votePower;
-
-                // now, when we wrote current vote power -> add it to proposal count
-                proposals[_proposalId].voteCount += voters[msg.sender]
-                    .votePower;
             }
         } else {
             // voting first time
-            decisions[msg.sender].prevVotePower = voters[msg.sender].votePower;
-            decisions[msg.sender].proposalId = _proposalId;
             decisions[msg.sender].exists = true;
-
-            proposals[_proposalId].voteCount += voters[msg.sender].votePower;
         }
+        // write new decision
+        decisions[msg.sender].proposalId = _proposalId;
+
+        // vote power in decision becomes a previous for next vote by adress
+        // current vote power may be different
+        decisions[msg.sender].prevVotePower = voters[msg.sender].votePower;
+
+        // now, when we wrote current vote power -> add it to proposal count
+        proposals[_proposalId].voteCount += voters[msg.sender].votePower;
     }
 
     function discard() public {
         require(!Ended, "Voting was ended by creator.");
         require(block.timestamp < votingEndTime, "Voting is over.");
+        require(!decisions[msg.sender].discard, "Already discarded");
         if (!authByOwner) {
             autoAuthorize();
         }
@@ -153,34 +148,29 @@ contract Voting {
             proposals[decisions[msg.sender].proposalId]
                 .voteCount -= decisions[msg.sender].prevVotePower;
 
-            decisions[msg.sender].discard = true;
-            decisions[msg.sender].prevVotePower = voters[msg.sender].votePower;
             // change to invalid proposal id
             decisions[msg.sender].proposalId = 0;
-
-            discards[0].voteCount += voters[msg.sender].votePower;
         } else {
-            decisions[msg.sender].prevVotePower = voters[msg.sender].votePower;
             decisions[msg.sender].exists = true;
-            decisions[msg.sender].discard = true;
-
-            discards[0].voteCount += voters[msg.sender].votePower;
         }
+        discards[0].voteCount += voters[msg.sender].votePower;
+        decisions[msg.sender].discard = true;
+        decisions[msg.sender].prevVotePower = voters[msg.sender].votePower;
     }
 
     function getWinner() private {
-        uint256 totalVotes = 0;  
+        uint256 totalVotes = 0;
         for (uint8 i = 1; i <= proposalsCount; i++) {
-            totalVotes += proposals[i].voteCount; 
+            totalVotes += proposals[i].voteCount;
         }
 
-        if (discards[0].voteCount/totalVotes > discardPercent) {
+        if (discards[0].voteCount / totalVotes > discardPercent) {
             // do something
         }
 
         for (uint8 i = 1; i <= proposalsCount; i++) {
-            if (proposals[i].voteCount/totalVotes > winPercent) {
-                // do something 
+            if (proposals[i].voteCount / totalVotes > winPercent) {
+                // do something
             }
         }
     }
