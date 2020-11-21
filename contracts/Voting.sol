@@ -1,5 +1,9 @@
 pragma solidity >=0.5.0;
 
+// TODO :
+// ? authorization by owner with array parameter
+// create separate functions for same parts
+
 contract Voting {
     address public votingCreator;
 
@@ -30,6 +34,7 @@ contract Voting {
         bool isDelegate;
         bool delegated;
         address delegatedTo;
+        uint16 delegatedVotePower;
     }
 
     struct Decision {
@@ -88,7 +93,6 @@ contract Voting {
         }
     }
 
-    //? by array
     function authorize(address _voterAdress) public {
         require(msg.sender == votingCreator);
         // need this, because otherwise creator can decrease the power
@@ -121,6 +125,12 @@ contract Voting {
                     .voteCount -= decisions[msg.sender].prevVotePower;
             }
         } else {
+            // if person delegated or delegated after decision
+            // he has no decision
+            if (voters[msg.sender].delegated) {
+                // return votepower to voter
+                returnVotePower();
+            }
             // voting first time
             decisions[msg.sender].exists = true;
         }
@@ -128,7 +138,7 @@ contract Voting {
         decisions[msg.sender].proposalId = _proposalId;
 
         // vote power in decision becomes a previous for next vote by adress
-        // current vote power may be different
+        // current vote power may be different because of delegation
         decisions[msg.sender].prevVotePower = voters[msg.sender].votePower;
 
         // now, when we wrote current vote power -> add it to proposal count
@@ -179,4 +189,75 @@ contract Voting {
         require(msg.sender == votingCreator);
         Ended = true;
     }
+
+    function delegate(address _delegateAddr) public {
+        if (!authByOwner) {
+            autoAuthorize();
+        }
+        require(voters[msg.sender].authorized);
+        require(
+            voters[_delegateAddr].authorized,
+            "Your delegate is not authorized"
+        );
+        require(!voters[msg.sender].delegated, "You have already delegated");
+        require(
+            !voters[_delegateAddr].delegated,
+            "This adress already delegated"
+        );
+
+        // if voter has decision -> delete it
+        // voter will be directed in "never voted" branch,
+        // if votes after delegation
+        if (decisions[msg.sender].exists) {
+            if (decisions[msg.sender].discard = true) {
+                decisions[msg.sender].discard = false;
+                discards[0].voteCount -= decisions[msg.sender].prevVotePower;
+            } else {
+                proposals[decisions[msg.sender].proposalId]
+                    .voteCount -= decisions[msg.sender].prevVotePower;
+                decisions[msg.sender].proposalId = 0;
+            }
+            decisions[msg.sender].prevVotePower = 0;
+            decisions[msg.sender].exists = false;
+
+            voters[msg.sender].delegated = true;
+            voters[msg.sender].delegatedTo = _delegateAddr;
+
+            voters[_delegateAddr].isDelegate = true;
+            // ? (addDelegatePower) voters[_delegateAddr].votePower += voters[msg.sender].votePower;
+
+            voters[msg.sender].delegatedVotePower = voters[msg.sender]
+                .votePower;
+            voters[msg.sender].votePower = 0;
+        }
+
+        // call addDelegatePower
+    }
+
+    // returns votepower to voter and takes away from delegate
+    function returnVotePower() private {
+        // if voter delegated he can't have votepower, because of delegate()
+        voters[msg.sender].votePower += voters[msg.sender].delegatedVotePower;
+        subtractDelegatePowers(
+            voters[msg.sender].delegatedVotePower,
+            voters[msg.sender].delegatedTo
+        );
+    }
+
+    function subtractDelegatePowers(uint16 _power, address _addr) private {
+        // running on chain of delegates
+
+        // take away power from delegate
+        voters[_addr].votePower -= _power;
+
+        // we don't need to check if decision exists,
+        // because delegate can't have decision
+        // check if delegate delegated
+        if (voters[_addr].delegated) {
+            subtractDelegatePowers(_power, voters[_addr].delegatedTo);
+        }
+    }
+
+    // call it in delegate()
+    function addDelegatePowers(uint16 _power, address _addr) private {}
 }
