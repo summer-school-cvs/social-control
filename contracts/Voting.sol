@@ -224,14 +224,14 @@ contract Voting {
             voters[msg.sender].delegatedTo = _delegateAddr;
 
             voters[_delegateAddr].isDelegate = true;
-            // ? (addDelegatePower) voters[_delegateAddr].votePower += voters[msg.sender].votePower;
 
             voters[msg.sender].delegatedVotePower = voters[msg.sender]
                 .votePower;
             voters[msg.sender].votePower = 0;
         }
 
-        // call addDelegatePower
+        // increase delegate powers
+        addDelegatePowers(voters[msg.sender].votePower, _delegateAddr);
     }
 
     // returns votepower to voter and takes away from delegate
@@ -259,5 +259,19 @@ contract Voting {
     }
 
     // call it in delegate()
-    function addDelegatePowers(uint16 _power, address _addr) private {}
+    function addDelegatePowers(uint16 _power, address _addr) private {
+        // add power to delegate
+        voters[_addr].votePower += _power;
+
+        // check if delegate delegated
+        // if so, he has no decision
+        if (voters[_addr].delegated) {
+            addDelegatePowers(_power, voters[_addr].delegatedTo);
+        }
+
+        // if not delegated, may be not have a decision yet
+        if (decisions[_addr].exists) {
+            proposals[decisions[_addr].proposalId].voteCount += _power;
+        }
+    }
 }
