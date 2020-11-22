@@ -3,11 +3,13 @@ pragma solidity >=0.5.0;
 import "./AllianceStorage.sol";
 import "./IAllianceImplementation.sol";
 import "./DefaultAllianceImplementation.sol";
+import "./actions/AddMember.sol";
 
 contract Alliance is AllianceStorage, IAllianceImplementation {
     constructor() public {
         implementation = new DefaultAllianceImplementation();
         members[msg.sender].is_member = true;
+        member_add_action = new AddMember();
     }
     
     function join(address val) public override returns(address) {

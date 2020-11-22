@@ -5,9 +5,9 @@ import "../AllianceStorage.sol";
 
 contract AddMember is AllianceStorage, IAction {
     function execute(address val) public override {
-        address new_member = val;    // TODO: new_member from proposal
-        address[] memory supportive; // TODO: supportive from voting
-        members[new_member].is_member = true;
-        members[new_member].supportive = supportive;
+        // address new_member;          // TODO: new_member from won proposal
+        // address[] memory supportive; // TODO: supportive from voting
+        // members[new_member].is_member = true;
+        // members[new_member].supportive = supportive;
     }
 }
