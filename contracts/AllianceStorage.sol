@@ -14,6 +14,7 @@ contract AllianceStorage {
     IAction public member_add_action;
     IAction public member_delete_action;
     IAction public member_own_delete_action;
+    IAction public empty_action;
 
     mapping(address => MemberInfo) public members;
 
@@ -22,5 +23,5 @@ contract AllianceStorage {
     mapping(address => address) public candidates_for_exclusion;
 
     // mapping(voting, creator)
-    mapping(address => address) public votings;
+    mapping(address => address) public elections;
 }
