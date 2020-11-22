@@ -116,7 +116,7 @@ contract Voting {
 
         // check if user has a previous decision
         if (decisions[msg.sender].exists) {
-            if (decisions[msg.sender].discard = true) {
+            if (decisions[msg.sender].discard) {
                 decisions[msg.sender].discard = false;
                 discards[0].voteCount -= decisions[msg.sender].prevVotePower;
             } else {
