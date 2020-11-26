@@ -46,11 +46,11 @@ contract DefaultAllianceImplementation is
         proposals[0].name = "Keep";
         proposals[0].description = "Keep candidate's membership";
         proposals[0].action_data = val;
-        proposals[0].won_action = member_delete_action;
+        proposals[0].won_action = remove_exclusion_candidate_action;
 
         proposals[1].name = "Exclude";
         proposals[1].description = "Exclude candidate";
-        proposals[1].won_action = remove_exclusion_candidate_action;
+        proposals[1].won_action = member_delete_action;
 
         Election election = new Election(); //30, 70, 30);
 
@@ -80,6 +80,7 @@ contract DefaultAllianceImplementation is
     function processVotingResult(uint256) public override onlyOwnElection {
         Election election = Election(msg.sender);
 
+        // candidate address, action for candidate
         (address data, IAction action) = election.winner();
         (bool success, bytes memory result) = address(action).delegatecall(
             abi.encodeWithSignature("execute(address)", data)

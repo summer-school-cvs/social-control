@@ -162,10 +162,12 @@ contract Election {
         return impl.members(msg.sender);
     }
 
-    // TODO: invoke process function on end time
+    function invokeVotingResult() private {
+        // TODO: create an end time trigger
+    }
     
     function winner() view public returns(address data, IAction action) {
-        // TODO: discard, failed
+        // TODO: discard, failed, difference in auth/non_auth votes
 
         uint256 totalVotes; 
         for (uint8 i=0; i <= proposals.length; i++ ) {
