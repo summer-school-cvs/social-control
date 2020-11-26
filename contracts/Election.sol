@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: MIT
+
 pragma solidity >=0.5.0;
 
 import "./IAction.sol";
@@ -14,11 +16,12 @@ contract Election {
     struct Proposal {
         string name;
         string description;
+        address action_data;
         IAction won_action;
         uint256 vote_count;
     }
 
-    address owner;
+    address public owner;
     Alliance impl = Alliance(owner);
 
     uint256 end_time;
@@ -29,20 +32,20 @@ contract Election {
 
     uint256 public discards;
 
-    uint256 public immutable failed_threshold;
-    uint256 public immutable win_ratio;
-    uint256 public immutable discard_threshold;
+    // uint256 public immutable failed_threshold;
+    // uint256 public immutable win_ratio;
+    // uint256 public immutable discard_threshold;
 
     constructor(
-        uint256 f_th,
-        uint256 wr,
-        uint256 desc_th
-    ) public {
+        // uint256 f_th,
+        // uint256 wr,
+        // uint256 desc_th
+    ) {
         owner = msg.sender;
         end_time = block.timestamp + (1440 * 1 minutes);
-        failed_threshold = f_th;
-        win_ratio = wr;
-        discard_threshold = desc_th;
+        // failed_threshold = f_th;
+        // win_ratio = wr;
+        // discard_threshold = desc_th;
     }
 
     // power ??
@@ -52,6 +55,8 @@ contract Election {
             id >= 0 && id <= proposals.length,
             "Incorrect ID of the proposal."
         );
+        
+        power = 1;
 
         if (checkVoterAuthorization()) {
             if (authorized_votes[msg.sender].voted) {
@@ -122,6 +127,8 @@ contract Election {
         require(block.timestamp < end_time, "Election is over.");
         require(!authorized_votes[msg.sender].discard, "Already discarded");
         require(!not_authorized_votes[msg.sender].discard, "Already discarded");
+        
+        power = 1;
 
         if (checkVoterAuthorization()) {
             authorized_votes[msg.sender].discard = true;
@@ -151,12 +158,12 @@ contract Election {
         }
     }
 
-    function checkVoterAuthorization() public returns (bool) {
-        bool member_status = impl.members(msg.sender);
-        if (member_status) {
-            return true;
-        } else {
-            return false;
-        }
+    function checkVoterAuthorization() public view returns (bool) {
+        return impl.members(msg.sender);
+    }
+    
+    function winner() view public returns(address data, IAction action) {
+        // TODO:
+        return (proposals[0].action_data, proposals[0].won_action);
     }
 }

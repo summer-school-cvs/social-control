@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: MIT
+
 pragma solidity >=0.5.0;
 
 import "./IAllianceImplementation.sol";
@@ -11,6 +13,8 @@ contract AllianceStorage {
     
     IAllianceImplementation public implementation;
     
+    IAction public remove_membership_candidate_action;
+    IAction public remove_exclusion_candidate_action;
     IAction public member_add_action;
     IAction public member_delete_action;
     IAction public member_own_delete_action;

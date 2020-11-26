@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: MIT
+
 pragma solidity >=0.5.0;
 
 import "./AllianceStorage.sol";
@@ -23,13 +25,14 @@ contract DefaultAllianceImplementation is
 
         proposals[0].name = "Accept";
         proposals[0].description = "blablabla";
+        proposals[0].action_data = val;
         proposals[0].won_action = member_add_action;
 
         proposals[1].name = "Not accept";
         proposals[1].description = "blablabla";
-        proposals[1].won_action = empty_action;
+        proposals[1].won_action = remove_membership_candidate_action;
 
-        Election election = new Election(30, 70, 30);
+        Election election = new Election();//30, 70, 30);
 
         candidates_for_membership[val] = address(election);
         elections[address(election)] = msg.sender;
@@ -37,7 +40,7 @@ contract DefaultAllianceImplementation is
         return address(election);
     }
 
-    function exclude(address val) public override onlyMember returns (address) {
+    function exclude(address ) public override onlyMember returns (address) {
         return address(0);
     }
 
@@ -49,7 +52,7 @@ contract DefaultAllianceImplementation is
 
     function undelegateFrom(address val) public override onlyMember {}
 
-    function updateImplementation(address val)
+    function updateImplementation(address )
         public
         override
         onlyMember
@@ -59,9 +62,10 @@ contract DefaultAllianceImplementation is
     }
 
     function processVotingResult(uint256) public override onlyOwnElection {
-        Election voting = Election(msg.sender);
-        Election.Proposal memory won_proposal; // = voting.get_won_proposal();
-        //(bool success, bytes memory result) = address(won_proposal.won_action).delegatecall(abi.encodeWithSignature("execute(address)", msg.sender));
-        //require(success, "");
+        Election election = Election(msg.sender);
+        
+        (address data, IAction action) = election.winner();
+        (bool success, bytes memory result) = address(action).delegatecall(abi.encodeWithSignature("execute(address)", data));
+        require(success, "");
     }
 }

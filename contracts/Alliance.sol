@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: MIT
+
 pragma solidity >=0.5.0;
 
 import "./AllianceStorage.sol";
@@ -5,13 +7,17 @@ import "./IAllianceImplementation.sol";
 import "./DefaultAllianceImplementation.sol";
 import "./actions/AddMember.sol";
 import "./actions/EmptyAction.sol";
+import "./actions/RemoveCandidateForMembership.sol";
 
 contract Alliance is AllianceStorage, IAllianceImplementation {
-    constructor() public {
+    constructor() {
         implementation = new DefaultAllianceImplementation();
         members[msg.sender].is_member = true;
+        
         member_add_action = new AddMember();
         empty_action = new EmptyAction();
+        remove_membership_candidate_action = new RemoveCandidateForMembership();
+        //remove_exclusion_candidate_action;
     }
     
     function join(address val) public override returns(address) {
