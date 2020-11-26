@@ -137,7 +137,7 @@ contract Election {
                     .vote_count -= authorized_votes[msg.sender].prevVotePower;
 
                 // change to invalid proposal id
-                authorized_votes[msg.sender].vote = 0;
+                authorized_votes[msg.sender].vote = -1;
                 authorized_votes[msg.sender].voted = false;
                 authorized_votes[msg.sender].prevVotePower = power;
             }
@@ -151,7 +151,7 @@ contract Election {
                 proposals[not_authorized_votes[msg.sender].vote]
                     .vote_count -= 1;
 
-                not_authorized_votes[msg.sender].vote = 0;
+                not_authorized_votes[msg.sender].vote = -1;
                 not_authorized_votes[msg.sender].voted = false;
             }
             discards += 1;
@@ -161,9 +161,21 @@ contract Election {
     function checkVoterAuthorization() public view returns (bool) {
         return impl.members(msg.sender);
     }
+
+    // TODO: invoke process function on end time
     
     function winner() view public returns(address data, IAction action) {
-        // TODO:
-        return (proposals[0].action_data, proposals[0].won_action);
+        // TODO: discard, failed
+
+        uint256 totalVotes; 
+        for (uint8 i=0; i <= proposals.length; i++ ) {
+            totalVotes += proposals[i].vote_count;
+        }
+
+        for (uint8 i=0; i <= proposals.length; i++ ) {
+            if (proposals[i].vote_count/totalVotes > win_ratio) {
+                return (proposals[0].action_data, proposals[0].won_action);
+            }
+        }
     }
 }
