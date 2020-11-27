@@ -10,9 +10,9 @@ contract AllianceStorage {
         address[] supportive;
         bool is_member;
     }
-    
+
     IAllianceImplementation public implementation;
-    
+
     IAction public remove_membership_candidate_action;
     IAction public remove_exclusion_candidate_action;
     IAction public member_add_action;

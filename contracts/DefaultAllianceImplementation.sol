@@ -41,6 +41,10 @@ contract DefaultAllianceImplementation is
     }
 
     function exclude(address val) public override onlyMember returns (address) {
+        require(
+            msg.sender != val,
+            "You can't exclude yourself, choose 'leave' option"
+        );
         Election.Proposal[] memory proposals = new Election.Proposal[](2);
 
         proposals[0].name = "Keep";
