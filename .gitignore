@@ -1,0 +1,3 @@
+contracts/artifacts/*.json
+contracts/actions/artifacts/*.json
+bin/*

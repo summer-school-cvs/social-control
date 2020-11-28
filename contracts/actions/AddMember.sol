@@ -13,5 +13,6 @@ contract AddMember is AllianceStorage, IAction {
         members[candidate].is_member = true;
         // TODO: supportive from election
         // members[new_member].supportive = supportive;
+        members_count += 1;
     }
 }

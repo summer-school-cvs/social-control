@@ -13,4 +13,6 @@ abstract contract IAllianceImplementation {
     function updateImplementation(address) public virtual returns(address);
     
     function processVotingResult(uint256 id) public virtual;
+
+    function destroy() public virtual;
 }

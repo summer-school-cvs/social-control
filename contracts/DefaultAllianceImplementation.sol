@@ -1,23 +1,19 @@
 // SPDX-License-Identifier: MIT
 
-pragma solidity >=0.5.0;
+pragma solidity >=0.6.0;
 
 import "./AllianceStorage.sol";
 import "./IAllianceImplementation.sol";
 import "./Election.sol";
+import "./Owned.sol";
 
 contract DefaultAllianceImplementation is
     AllianceStorage,
-    IAllianceImplementation
-{
-    modifier onlyMember() {
-        require(members[msg.sender].is_member, "");
-        _;
-    }
-
-    modifier onlyOwnElection() {
-        require(elections[msg.sender] == address(0), "");
-        _;
+    IAllianceImplementation,
+    Owned
+{    
+    constructor() {
+        members[msg.sender].is_member = true;
     }
 
     function join(address val) public override returns (address) {
@@ -65,6 +61,10 @@ contract DefaultAllianceImplementation is
     }
 
     function leave() public override onlyMember returns (address) {
+        (bool success,) = address(member_own_delete_action).
+            delegatecall(abi.encodeWithSignature("execute(address payable)", msg.sender));
+        require(success);
+
         return address(0);
     }
 
@@ -81,14 +81,17 @@ contract DefaultAllianceImplementation is
         return address(0);
     }
 
-    function processVotingResult(uint256) public override onlyOwnElection {
+    function processVotingResult(uint256) public override {
         Election election = Election(msg.sender);
 
         // candidate address, action for candidate
         (address data, IAction action) = election.winner();
-        (bool success, bytes memory result) = address(action).delegatecall(
-            abi.encodeWithSignature("execute(address)", data)
-        );
-        require(success, "");
+        (bool success,) = address(action).
+            delegatecall(abi.encodeWithSignature("execute(address payable)", data));
+        require(success);
+    }
+
+    function destroy() public onlyOwner override(IAllianceImplementation, Owned) {
+        Owned.destroy();
     }
 }
