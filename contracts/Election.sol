@@ -33,7 +33,7 @@ contract Election {
     uint256 public discards;
 
     // uint256 public immutable failed_threshold;
-    // uint256 public immutable win_ratio;
+    uint256 public immutable win_ratio;
     // uint256 public immutable discard_threshold;
 
     constructor(
@@ -44,7 +44,7 @@ contract Election {
         owner = msg.sender;
         end_time = block.timestamp + (1440 * 1 minutes);
         // failed_threshold = f_th;
-        // win_ratio = wr;
+        win_ratio = 1;
         // discard_threshold = desc_th;
     }
 
@@ -137,7 +137,7 @@ contract Election {
                     .vote_count -= authorized_votes[msg.sender].prevVotePower;
 
                 // change to invalid proposal id
-                authorized_votes[msg.sender].vote = -1;
+                authorized_votes[msg.sender].vote = proposals.length;
                 authorized_votes[msg.sender].voted = false;
                 authorized_votes[msg.sender].prevVotePower = power;
             }
@@ -151,7 +151,7 @@ contract Election {
                 proposals[not_authorized_votes[msg.sender].vote]
                     .vote_count -= 1;
 
-                not_authorized_votes[msg.sender].vote = -1;
+                not_authorized_votes[msg.sender].vote = proposals.length;
                 not_authorized_votes[msg.sender].voted = false;
             }
             discards += 1;
