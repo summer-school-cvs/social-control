@@ -2,7 +2,7 @@
 
 pragma solidity >=0.5.0;
 
-abstract contract IAllianceImplementation {
+abstract contract IAlliance {
     function join(address val) public virtual returns(address);
     function exclude(address val) public virtual returns(address);
     function leave() public virtual returns(address);

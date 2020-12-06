@@ -2,15 +2,15 @@
 
 pragma solidity >=0.6.0;
 
-import "./AllianceStorage.sol";
-import "./IAllianceImplementation.sol";
+import "../interface/AllianceStorage.sol";
+import "../interface/IAlliance.sol";
 import "./DefaultAllianceImplementation.sol";
 import "./actions/AddMember.sol";
 import "./actions/EmptyAction.sol";
 import "./actions/RemoveCandidateForMembership.sol";
 import "./actions/RemoveMember.sol";
 
-contract Alliance is AllianceStorage, IAllianceImplementation {
+contract Alliance is AllianceStorage, IAlliance {
     constructor() {
         implementation = new DefaultAllianceImplementation();
         members[msg.sender].is_member = true;

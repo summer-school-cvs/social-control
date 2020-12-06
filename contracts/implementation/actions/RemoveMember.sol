@@ -2,8 +2,8 @@
 
 pragma solidity >=0.6.0;
 
-import "../IAction.sol";
-import "../AllianceStorage.sol";
+import "../../interface/IAction.sol";
+import "../../interface/AllianceStorage.sol";
 
 contract RemoveMember is AllianceStorage, IAction {
     function execute(address candidate) public override {

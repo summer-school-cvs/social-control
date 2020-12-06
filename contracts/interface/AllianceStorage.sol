@@ -2,7 +2,7 @@
 
 pragma solidity >=0.5.0;
 
-import "./IAllianceImplementation.sol";
+import "./IAlliance.sol";
 import "./IAction.sol";
 
 contract AllianceStorage {
@@ -11,7 +11,7 @@ contract AllianceStorage {
         bool is_member;
     }
 
-    IAllianceImplementation public implementation;
+    IAlliance public implementation;
 
     IAction public remove_membership_candidate_action;
     IAction public remove_exclusion_candidate_action;

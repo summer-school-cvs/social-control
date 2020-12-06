@@ -1,8 +1,9 @@
 // SPDX-License-Identifier: MIT
 
-pragma solidity >=0.5.0;
+pragma solidity >=0.7.5;
+pragma abicoder v2;
 
-import "./IAction.sol";
+import "../interface/IAction.sol";
 import "./Alliance.sol";
 
 contract Election {
@@ -37,11 +38,16 @@ contract Election {
     // uint256 public immutable discard_threshold;
 
     constructor(
+        Proposal[] memory _proposals
         // uint256 f_th,
         // uint256 wr,
         // uint256 desc_th
     ) {
         owner = msg.sender;
+        for(uint i = 0; i < _proposals.length; ++i) {
+            proposals.push(_proposals[i]);
+        }
+        
         end_time = block.timestamp + (1440 * 1 minutes);
         // failed_threshold = f_th;
         win_ratio = 1;

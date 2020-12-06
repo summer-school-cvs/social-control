@@ -1,15 +1,16 @@
 // SPDX-License-Identifier: MIT
 
-pragma solidity >=0.6.0;
+pragma solidity >=0.7.5;
+pragma abicoder v2;
 
-import "./AllianceStorage.sol";
-import "./IAllianceImplementation.sol";
+import "../interface/AllianceStorage.sol";
+import "../interface/IAlliance.sol";
+import "../interface/Owned.sol";
 import "./Election.sol";
-import "./Owned.sol";
 
 contract DefaultAllianceImplementation is
     AllianceStorage,
-    IAllianceImplementation,
+    IAlliance,
     Owned
 {    
     constructor() {
@@ -28,7 +29,7 @@ contract DefaultAllianceImplementation is
         proposals[1].description = "blablabla";
         proposals[1].won_action = remove_membership_candidate_action;
 
-        Election election = new Election(); //30, 70, 30);
+        Election election = new Election(proposals);
 
         candidates_for_membership[val] = address(election);
         elections[address(election)] = msg.sender;
@@ -52,7 +53,7 @@ contract DefaultAllianceImplementation is
         proposals[1].description = "Exclude candidate";
         proposals[1].won_action = member_delete_action;
 
-        Election election = new Election(); //30, 70, 30);
+        Election election = new Election(proposals);
 
         candidates_for_exclusion[val] = address(election);
         elections[address(election)] = msg.sender;
@@ -91,7 +92,7 @@ contract DefaultAllianceImplementation is
         require(success);
     }
 
-    function destroy() public onlyOwner override(IAllianceImplementation, Owned) {
+    function destroy() public onlyOwner override(IAlliance, Owned) {
         Owned.destroy();
     }
 }
