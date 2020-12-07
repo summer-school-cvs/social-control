@@ -13,12 +13,13 @@ contract AllianceStorage {
 
     IAlliance public implementation;
 
-    IAction public remove_membership_candidate_action;
-    IAction public remove_exclusion_candidate_action;
+    IAction public cancel_membership_action;
+    IAction public cancel_exclusion_action;
     IAction public member_add_action;
-    IAction public member_delete_action;
-    IAction public member_own_delete_action;
+    IAction public member_exclude_action;
+    IAction public member_leave_action;
     IAction public empty_action;
+    IAction public update_impl_action;
 
     mapping(address => MemberInfo) public members;
 

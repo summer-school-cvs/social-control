@@ -27,7 +27,7 @@ contract DefaultAllianceImplementation is
 
         proposals[1].name = "Not accept";
         proposals[1].description = "blablabla";
-        proposals[1].won_action = remove_membership_candidate_action;
+        proposals[1].won_action = cancel_membership_action;
 
         Election election = new Election(proposals);
 
@@ -47,11 +47,11 @@ contract DefaultAllianceImplementation is
         proposals[0].name = "Keep";
         proposals[0].description = "Keep candidate's membership";
         proposals[0].action_data = val;
-        proposals[0].won_action = remove_exclusion_candidate_action;
+        proposals[0].won_action = cancel_exclusion_action;
 
         proposals[1].name = "Exclude";
         proposals[1].description = "Exclude candidate";
-        proposals[1].won_action = member_delete_action;
+        proposals[1].won_action = member_exclude_action;
 
         Election election = new Election(proposals);
 
@@ -62,7 +62,7 @@ contract DefaultAllianceImplementation is
     }
 
     function leave() public override onlyMember returns (address) {
-        (bool success,) = address(member_own_delete_action).
+        (bool success,) = address(member_leave_action).
             delegatecall(abi.encodeWithSignature("execute(address payable)", msg.sender));
         require(success);
 
@@ -73,13 +73,23 @@ contract DefaultAllianceImplementation is
 
     function undelegateFrom(address val) public override onlyMember {}
 
-    function updateImplementation(address)
-        public
-        override
-        onlyMember
-        returns (address)
-    {
-        return address(0);
+    function updateImplementation(address val) public override onlyMember returns (address) {
+        Election.Proposal[] memory proposals = new Election.Proposal[](2);
+
+        proposals[0].name = "Update";
+        proposals[0].description = "Update the implementation.";
+        proposals[0].action_data = val;
+        proposals[0].won_action = update_impl_action;
+
+        proposals[1].name = "Not update";
+        proposals[1].description = "Don't update the implementation.";
+        proposals[1].won_action = empty_action;
+
+        Election election = new Election(proposals);
+
+        elections[address(election)] = msg.sender;
+
+        return address(election);
     }
 
     function processVotingResult(uint256) public override {

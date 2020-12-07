@@ -9,18 +9,20 @@ import "./actions/AddMember.sol";
 import "./actions/EmptyAction.sol";
 import "./actions/RemoveCandidateForMembership.sol";
 import "./actions/RemoveMember.sol";
+import "./actions/UpdateImpl.sol";
 
 contract Alliance is AllianceStorage, IAlliance {
     constructor() {
         implementation = new DefaultAllianceImplementation();
         members[msg.sender].is_member = true;
         
-        remove_membership_candidate_action = new RemoveCandidateForMembership();
-        remove_exclusion_candidate_action  = new EmptyAction(); // TODO
-        member_add_action                  = new AddMember();
-        member_delete_action               = new RemoveMember();
-        member_own_delete_action           = new RemoveMember();
-        empty_action                       = new EmptyAction();
+        cancel_membership_action = new RemoveCandidateForMembership();
+        cancel_exclusion_action  = new EmptyAction(); // TODO
+        member_add_action        = new AddMember();
+        member_exclude_action    = new RemoveMember();
+        member_leave_action      = new RemoveMember();
+        empty_action             = new EmptyAction();
+        update_impl_action       = new UpdateImpl();
     }
     
     function join(address val) public override returns(address) {
@@ -67,11 +69,11 @@ contract Alliance is AllianceStorage, IAlliance {
     
     function destroy() public override {
         if(members_count == 1) {
-            remove_membership_candidate_action.destroy();
-            remove_exclusion_candidate_action.destroy();
+            cancel_membership_action.destroy();
+            cancel_exclusion_action.destroy();
             member_add_action.destroy();
-            member_delete_action.destroy();
-            member_own_delete_action.destroy();
+            member_exclude_action.destroy();
+            member_leave_action.destroy();
             empty_action.destroy();
 
             implementation.destroy();
