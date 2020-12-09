@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: MIT
 
 pragma solidity >=0.6.0;
+pragma abicoder v2;
 
 import "../interface/AllianceStorage.sol";
 import "../interface/IAlliance.sol";
@@ -23,6 +24,13 @@ contract Alliance is AllianceStorage, IAlliance {
         member_leave_action      = new RemoveMember();
         empty_action             = new EmptyAction();
         update_impl_action       = new UpdateImpl();
+    }
+
+    function isMember(address val) public override returns(bool) {
+        (bool success, bytes memory result) = address(implementation).
+            delegatecall(abi.encodeWithSignature("isMember(address) ", val));
+        require(success);        
+        return abi.decode(result, (bool));
     }
     
     function join(address val) public override returns(address) {
@@ -65,6 +73,13 @@ contract Alliance is AllianceStorage, IAlliance {
         (bool success,) = address(implementation).
             delegatecall(abi.encodeWithSignature("processVotingResult(uint256)", id));
         require(success);
+    }
+
+
+    function createElection(Election.Proposal[] memory proposals) public override returns(address) {
+        (bool success, bytes memory result) = address(implementation).delegatecall(abi.encodeWithSignature("createElection((Election.Proposal[] memory)", proposals));
+        require(success);
+        return abi.decode(result, (address));
     }
     
     function destroy() public override {
