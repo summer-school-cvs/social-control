@@ -3,3 +3,4 @@ contracts/actions/artifacts/*.json
 bin/*
 build/*
 .vscode/*
+/node_modules

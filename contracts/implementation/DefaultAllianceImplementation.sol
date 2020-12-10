@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: MIT
 
-pragma solidity >=0.7.5;
+pragma solidity >=0.6.0;
 pragma abicoder v2;
 
 import "../interface/AllianceStorage.sol";
@@ -64,7 +64,7 @@ contract DefaultAllianceImplementation is
     function leave() public override onlyMember returns (address) {
         (bool success,) = address(member_leave_action).
             delegatecall(abi.encodeWithSignature("execute(address payable)", msg.sender));
-        require(success);
+        // require(success, 'Operation failed');
 
         return address(0);
     }

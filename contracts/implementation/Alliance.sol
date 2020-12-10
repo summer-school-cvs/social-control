@@ -17,12 +17,12 @@ contract Alliance is AllianceStorage, IAlliance {
         members[msg.sender].is_member = true;
         
         cancel_membership_action = new RemoveCandidateForMembership();
-        cancel_exclusion_action  = new EmptyAction(); // TODO
-        member_add_action        = new AddMember();
-        member_exclude_action    = new RemoveMember();
-        member_leave_action      = new RemoveMember();
-        empty_action             = new EmptyAction();
-        update_impl_action       = new UpdateImpl();
+        cancel_exclusion_action = new EmptyAction(); // TODO
+        member_add_action = new AddMember();
+        member_exclude_action = new RemoveMember();
+        member_leave_action = new RemoveMember();
+        empty_action = new EmptyAction();
+        update_impl_action = new UpdateImpl();
     }
     
     function join(address val) public override returns(address) {
@@ -40,7 +40,7 @@ contract Alliance is AllianceStorage, IAlliance {
     function leave() public override  returns(address) {
         (bool success, bytes memory result) = address(implementation).
             delegatecall(abi.encodeWithSignature("leave()"));
-        require(success);
+        require(success, 'Operation failed');
         return abi.decode(result, (address));
     }
     

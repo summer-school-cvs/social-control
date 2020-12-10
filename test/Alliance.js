@@ -1,4 +1,6 @@
 var Alliance = artifacts.require("./Alliance.sol")
+var AllianceStorage = artifacts.require("./AllianceStorage.sol")
+var Election = artifacts.require("./Election.sol")
 
 contract("Alliance", (accounts) => {
 
@@ -10,14 +12,31 @@ contract("Alliance", (accounts) => {
 
     it("Allows to create a join member election", async () => {
         instance = await Alliance.deployed();
-        res = await instance.join(accounts[2])
-        assert(res != undefined)
+        res = await instance.join.call(accounts[2])
         assert(res != '')
+        isvalid = web3.utils.isAddress(res)
+        assert.equal(isvalid, true, "address of election was returned")
     })
 
     it("Allows to create a exclude member election", async () => {
         instance = await Alliance.deployed();
-        res = await instance.exclude(accounts[2])
+        res = await instance.exclude.call(accounts[2])
+        assert(res != '')
+        isvalid = web3.utils.isAddress(res)
+        assert.equal(isvalid, true, "address of election was returned")
+    })
+
+    it("Allows to create a update impl election", async () => {
+        instance = await Alliance.deployed();
+        res = await instance.updateImplementation.call(accounts[2])
+        assert(res != '')
+        isvalid = web3.utils.isAddress(res)
+        assert.equal(isvalid, true, "address of election was returned")
+    })
+
+    it("Self destruct", async () => {
+        instance = await Alliance.deployed();
+        res = await instance.destroy()
         assert(res != undefined)
         assert(res != '')
     })
@@ -25,9 +44,9 @@ contract("Alliance", (accounts) => {
     // VM Error
     it("Allows to leave from members", async () => {
         instance = await Alliance.deployed();
-        address = await instance.leave()
-
-        console.log(address)
+        process = await instance.leave.call()
+        console.log(process)
     })
 
+    // add delegate and undelegate
 })
