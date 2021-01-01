@@ -7,7 +7,7 @@ import "./Election.sol";
 
 abstract contract IAlliance {
     // TODO: view
-    function isMember(address) public virtual returns(bool);
+    function isMember(address) public view virtual returns(bool);
 
     function join(address val) public virtual returns(address);
     function exclude(address val) public virtual returns(address);

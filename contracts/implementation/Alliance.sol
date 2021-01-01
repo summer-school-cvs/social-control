@@ -17,18 +17,18 @@ contract Alliance is AllianceStorage, IAlliance {
         implementation = new DefaultAllianceImplementation();
         members[msg.sender].is_member = true;
         
-        cancel_membership_action = new RemoveCandidateForMembership();
-        cancel_exclusion_action  = new EmptyAction(); // TODO
-        member_add_action        = new AddMember();
-        member_exclude_action    = new RemoveMember();
-        member_leave_action      = new RemoveMember();
-        empty_action             = new EmptyAction();
-        update_impl_action       = new UpdateImpl();
+        actions["accept_candidate"] = new AddMember();
+        actions["reject_candidate"] = new RemoveCandidateForMembership();
+        actions["accept_exclusion"] = new RemoveMember();
+        actions["reject_exclusion"] = new EmptyAction(); // TODO
+        actions["update_impl"]      = new UpdateImpl();
+        actions["no_acton"]         = new EmptyAction();
+        actions["leave_alliance"]   = new RemoveMember();
     }
 
-    function isMember(address val) public override returns(bool) {
+    function isMember(address val) public view override returns(bool) {
         (bool success, bytes memory result) = address(implementation).
-            delegatecall(abi.encodeWithSignature("isMember(address) ", val));
+            staticcall(abi.encodeWithSignature("isMember(address)", val));
         require(success);        
         return abi.decode(result, (bool));
     }
@@ -84,12 +84,21 @@ contract Alliance is AllianceStorage, IAlliance {
     
     function destroy() public override {
         if(members_count == 1) {
-            cancel_membership_action.destroy();
-            cancel_exclusion_action.destroy();
-            member_add_action.destroy();
-            member_exclude_action.destroy();
-            member_leave_action.destroy();
-            empty_action.destroy();
+            actions["accept_candidate"].destroy();
+            actions["reject_candidate"].destroy();
+            actions["accept_exclusion"].destroy();
+            actions["reject_exclusion"].destroy();
+            actions["update_impl"]     .destroy();
+            actions["no_acton"]        .destroy();
+            actions["leave_alliance"]  .destroy(); 
+
+            actions["accept_candidate"] = IAction(0);
+            actions["reject_candidate"] = IAction(0);
+            actions["accept_exclusion"] = IAction(0);
+            actions["reject_exclusion"] = IAction(0);
+            actions["update_impl"]      = IAction(0);
+            actions["no_acton"]         = IAction(0);
+            actions["leave_alliance"]   = IAction(0);
 
             implementation.destroy();
         

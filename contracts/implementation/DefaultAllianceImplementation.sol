@@ -17,7 +17,7 @@ contract DefaultAllianceImplementation is
         members[msg.sender].is_member = true;
     }
 
-    function isMember(address val) public override returns(bool) {
+    function isMember(address val) public view override returns(bool) {
         return members[val].is_member;
     }
 
@@ -27,11 +27,11 @@ contract DefaultAllianceImplementation is
         proposals[0].name = "Accept";
         proposals[0].description = "blablabla";
         proposals[0].action_data = val;
-        proposals[0].won_action = member_add_action;
+        proposals[0].won_action = actions["accept_candidate"];
 
         proposals[1].name = "Not accept";
         proposals[1].description = "blablabla";
-        proposals[1].won_action = cancel_membership_action;
+        proposals[1].won_action = actions["reject_candidate"];
 
         Election election = newElection(proposals);
         candidates_for_membership[val] = address(election);
@@ -49,11 +49,11 @@ contract DefaultAllianceImplementation is
         proposals[0].name = "Keep";
         proposals[0].description = "Keep candidate's membership";
         proposals[0].action_data = val;
-        proposals[0].won_action = cancel_exclusion_action;
+        proposals[0].won_action = actions["accept_exclusion"];
 
         proposals[1].name = "Exclude";
         proposals[1].description = "Exclude candidate";
-        proposals[1].won_action = member_exclude_action;
+        proposals[1].won_action = actions["reject_exclusion"];
 
         Election election = newElection(proposals);
         candidates_for_exclusion[val] = address(election);
@@ -62,7 +62,7 @@ contract DefaultAllianceImplementation is
     }
 
     function leave() public override onlyMember returns (address) {
-        (bool success,) = address(member_leave_action).
+        (bool success,) = address(actions["leave_alliace"]).
             delegatecall(abi.encodeWithSignature("execute(address payable)", msg.sender));
         require(success);
 
@@ -79,11 +79,11 @@ contract DefaultAllianceImplementation is
         proposals[0].name = "Update";
         proposals[0].description = "Update the implementation.";
         proposals[0].action_data = val;
-        proposals[0].won_action = update_impl_action;
+        proposals[0].won_action = actions["update_impl"];
 
         proposals[1].name = "Not update";
         proposals[1].description = "Don't update the implementation.";
-        proposals[1].won_action = empty_action;
+        proposals[1].won_action = actions["no_action"];
 
         Election election = newElection(proposals);
 
