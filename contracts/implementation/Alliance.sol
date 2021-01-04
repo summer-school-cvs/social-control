@@ -15,7 +15,9 @@ import "./actions/UpdateImpl.sol";
 contract Alliance is AllianceStorage, IAlliance {
     constructor() {
         implementation = new DefaultAllianceImplementation();
-        members[msg.sender].is_member = true;
+        members_info[msg.sender].is_member = true;
+        members_info[msg.sender].index = members.length;
+        members.push(msg.sender);
         
         actions["accept_candidate"] = new AddMember();
         actions["reject_candidate"] = new RemoveCandidateForMembership();
@@ -83,7 +85,7 @@ contract Alliance is AllianceStorage, IAlliance {
     }
     
     function destroy() public override {
-        if(members_count == 1) {
+        if(members.length == 1) {
             actions["accept_candidate"].destroy();
             actions["reject_candidate"].destroy();
             actions["accept_exclusion"].destroy();
@@ -102,7 +104,7 @@ contract Alliance is AllianceStorage, IAlliance {
 
             implementation.destroy();
         
-            selfdestruct(msg.sender);
+            selfdestruct(payable(members[0]));
         }
     }
 }

@@ -13,12 +13,10 @@ contract DefaultAllianceImplementation is
     IAlliance,
     Owned
 {    
-    constructor() {
-        members[msg.sender].is_member = true;
-    }
+    constructor() {}
 
     function isMember(address val) public view override returns(bool) {
-        return members[val].is_member;
+        return members_info[val].is_member;
     }
 
     function join(address val) public override returns (address) {
@@ -109,7 +107,15 @@ contract DefaultAllianceImplementation is
     }
 
     function newElection(Election.Proposal[] memory proposals) internal returns(Election) {
-        Election election = new Election(proposals);
+        Election election = new Election(proposals,
+                actions["no_acton"],
+                actions["no_acton"],
+                actions["no_acton"],
+                block.timestamp + 1000,
+                5,
+                5,
+                1
+            );
 
         elections[address(election)] = msg.sender;
 

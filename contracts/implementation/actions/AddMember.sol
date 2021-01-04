@@ -10,9 +10,8 @@ contract AddMember is AllianceStorage, IAction {
         require(candidates_for_membership[candidate] != address(0), "The address is not on the candidate list.");
         
         candidates_for_membership[candidate] = address(0);
-        members[candidate].is_member = true;
-        // TODO: supportive from election
-        // members[new_member].supportive = supportive;
-        members_count += 1;
+        members_info[candidate].is_member = true;
+        members_info[candidate].index = members.length;
+        members.push(candidate);
     }
 }

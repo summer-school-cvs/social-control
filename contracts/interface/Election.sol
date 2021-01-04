@@ -3,183 +3,76 @@
 pragma solidity >=0.7.5;
 pragma abicoder v2;
 
-import "./IAction.sol";
-import "./IAlliance.sol";
+import "../interface/IElection.sol";
 
-contract Election {
-    struct Voter {
-        uint256 vote;
-        bool discard;
-        bool voted;
-        uint256 prevVotePower;
-    }
-
-    struct Proposal {
-        string name;
-        string description;
-        address action_data;
-        IAction won_action;
-        uint256 vote_count;
-    }
-
-    address public owner;
-    IAlliance impl = IAlliance(owner);
-
-    uint256 end_time;
-
-    Proposal[] public proposals;
-    mapping(address => Voter) public authorized_votes;
-    mapping(address => Voter) public not_authorized_votes;
-
-    uint256 public discards;
-
-    // uint256 public immutable failed_threshold;
+contract Election is IElection {
+    uint256 public immutable discard_threshold;
+    uint256 public immutable quorum_threshold;
     uint256 public immutable win_ratio;
-    // uint256 public immutable discard_threshold;
 
     constructor(
-        Proposal[] memory _proposals
-        // uint256 f_th,
-        // uint256 wr,
-        // uint256 desc_th
-    ) {
-        owner = msg.sender;
+        Proposal[] memory _proposals,
+        IAction _no_quorum_action,
+        IAction _discard_action,
+        IAction _no_winner_action,
+        uint256 _end_time,
+        uint256 _discard_threshold,
+        uint256 _quorum_threshold,
+        uint256 _win_ratio
+    ) IElection(_proposals, _end_time, _no_quorum_action, _discard_action, _no_winner_action) {
         for(uint i = 0; i < _proposals.length; ++i) {
             proposals.push(_proposals[i]);
         }
+
+        discard_threshold    = _discard_threshold;
+        quorum_threshold     = _quorum_threshold;
+        win_ratio            = _win_ratio;
+    }
+
+    function winner() view public override returns(address data, IAction action) {
+        uint discard_index = proposals.length;
+        (uint256[] memory distribution, uint256 quorum) = distributionOfVotes();
+
+        if(discard_threshold <= distribution[discard_index])
+            return (address(this), discard_action);
         
-        end_time = block.timestamp + (1440 * 1 minutes);
-        // failed_threshold = f_th;
-        win_ratio = 1;
-        // discard_threshold = desc_th;
-    }
-
-    // power ??
-    function vote(uint256 id, uint256 power) public returns (uint256) {
-        require(block.timestamp < end_time, "Election is over.");
-        require(
-            id >= 0 && id <= proposals.length,
-            "Incorrect ID of the proposal."
-        );
-        
-        power = 1;
-
-        if (impl.isMember(msg.sender)) {
-            if (authorized_votes[msg.sender].voted) {
-                proposals[authorized_votes[msg.sender].vote]
-                    .vote_count -= authorized_votes[msg.sender].prevVotePower;
-
-                // change to new id
-                authorized_votes[msg.sender].vote = id;
-
-                proposals[authorized_votes[msg.sender].vote]
-                    .vote_count += power;
-
-                authorized_votes[msg.sender].prevVotePower = power;
-            }
-            if (authorized_votes[msg.sender].discard) {
-                authorized_votes[msg.sender].discard = false;
-                authorized_votes[msg.sender].voted = true;
-                discards -= authorized_votes[msg.sender].prevVotePower;
-                authorized_votes[msg.sender].vote = id;
-
-                proposals[authorized_votes[msg.sender].vote]
-                    .vote_count += power;
-                authorized_votes[msg.sender].prevVotePower = power;
-            }
-            if (
-                !authorized_votes[msg.sender].discard &&
-                !authorized_votes[msg.sender].voted
-            ) {
-                authorized_votes[msg.sender].voted = true;
-                authorized_votes[msg.sender].vote = id;
-                proposals[authorized_votes[msg.sender].vote]
-                    .vote_count += power;
-                authorized_votes[msg.sender].prevVotePower = power;
-            }
-        } else {
-            if (not_authorized_votes[msg.sender].voted) {
-                proposals[not_authorized_votes[msg.sender].vote]
-                    .vote_count -= 1;
-
-                // change to new id
-                not_authorized_votes[msg.sender].vote = id;
-
-                proposals[not_authorized_votes[msg.sender].vote]
-                    .vote_count += 1;
-            }
-            if (not_authorized_votes[msg.sender].discard) {
-                not_authorized_votes[msg.sender].discard = false;
-                not_authorized_votes[msg.sender].voted = true;
-                discards -= 1;
-                not_authorized_votes[msg.sender].vote = id;
-
-                proposals[not_authorized_votes[msg.sender].vote]
-                    .vote_count += 1;
-            }
-            if (
-                !not_authorized_votes[msg.sender].discard &&
-                !not_authorized_votes[msg.sender].voted
-            ) {
-                not_authorized_votes[msg.sender].voted = true;
-                not_authorized_votes[msg.sender].vote = id;
-                proposals[authorized_votes[msg.sender].vote].vote_count += 1;
+        if(quorum <= quorum_threshold)
+            return (address(this), no_quorum_action);
+        bool no_winner = true;
+        uint id = 0;
+        uint256 votes_count = 0;
+        for(uint i = 0; i < proposals.length; ++i) {
+            if(votes_count < distribution[i]) {
+                id = i;
+                votes_count = distribution[i];
+                no_winner = false;
             }
         }
-        return id;
+        if(no_winner)
+            return (address(this), no_winner_action);
+        if(votes_count <= distribution[discard_index])
+            return (address(this), discard_action);
+
+        return (proposals[id].action_data, proposals[id].won_action);
     }
 
-    function discard(uint256 power) public {
-        require(block.timestamp < end_time, "Election is over.");
-        require(!authorized_votes[msg.sender].discard, "Already discarded");
-        require(!not_authorized_votes[msg.sender].discard, "Already discarded");
-        
-        power = 1;
+    function distributionOfVotes() view internal returns(uint256[] memory, uint256) {
+        uint discard_index = proposals.length;
 
-        if (impl.isMember(msg.sender)) {
-            authorized_votes[msg.sender].discard = true;
-            if (authorized_votes[msg.sender].voted) {
-                proposals[authorized_votes[msg.sender].vote]
-                    .vote_count -= authorized_votes[msg.sender].prevVotePower;
+        uint256 quorum = 0;
+        uint256[] memory distribution = new uint256[](discard_index + 1);
 
-                // change to invalid proposal id
-                authorized_votes[msg.sender].vote = proposals.length;
-                authorized_votes[msg.sender].voted = false;
-                authorized_votes[msg.sender].prevVotePower = power;
-            }
-            discards += power;
-        } else {
-            not_authorized_votes[msg.sender].discard = true;
+        for(uint i = 0; i < voters.length; ++i) {
+            address cur_voter = voters[i];
+            if(!alliance.isMember(cur_voter))
+                continue;
 
-            // not_auth can't have delegates -> no previous power
-
-            if (not_authorized_votes[msg.sender].voted) {
-                proposals[not_authorized_votes[msg.sender].vote]
-                    .vote_count -= 1;
-
-                not_authorized_votes[msg.sender].vote = proposals.length;
-                not_authorized_votes[msg.sender].voted = false;
-            }
-            discards += 1;
-        }
-    }
-
-    function invokeVotingResult() private {
-        // TODO: create an end time trigger
-    }
-    
-    function winner() view public returns(address data, IAction action) {
-        // TODO: discard, failed, difference in auth/non_auth votes
-
-        uint256 totalVotes; 
-        for (uint8 i=0; i <= proposals.length; i++ ) {
-            totalVotes += proposals[i].vote_count;
-        }
-
-        for (uint8 i=0; i <= proposals.length; i++ ) {
-            if (proposals[i].vote_count/totalVotes > win_ratio) {
-                return (proposals[0].action_data, proposals[0].won_action);
+            if(votes[cur_voter].voted) {
+                distribution[votes[cur_voter].vote] += 1;
+                quorum += 1;
             }
         }
+
+        return (distribution, quorum);
     }
 }
