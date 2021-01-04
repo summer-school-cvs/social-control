@@ -8,7 +8,7 @@ import "../interface/IElection.sol";
 contract Election is IElection {
     uint256 public immutable discard_threshold;
     uint256 public immutable quorum_threshold;
-    uint256 public immutable win_ratio;
+    uint256 public immutable win_threshold;
 
     constructor(
         Proposal[] memory _proposals,
@@ -18,15 +18,15 @@ contract Election is IElection {
         uint256 _end_time,
         uint256 _discard_threshold,
         uint256 _quorum_threshold,
-        uint256 _win_ratio
+        uint256 _win_threshold
     ) IElection(_proposals, _end_time, _no_quorum_action, _discard_action, _no_winner_action) {
         for(uint i = 0; i < _proposals.length; ++i) {
             proposals.push(_proposals[i]);
         }
 
-        discard_threshold    = _discard_threshold;
-        quorum_threshold     = _quorum_threshold;
-        win_ratio            = _win_ratio;
+        discard_threshold = _discard_threshold;
+        quorum_threshold  = _quorum_threshold;
+        win_threshold     = _win_threshold;
     }
 
     function winner() view public override returns(address data, IAction action) {
@@ -49,6 +49,8 @@ contract Election is IElection {
             }
         }
         if(no_winner)
+            return (address(this), no_winner_action);
+        if(votes_count > win_threshold)
             return (address(this), no_winner_action);
         if(votes_count <= distribution[discard_index])
             return (address(this), discard_action);
