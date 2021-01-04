@@ -3,8 +3,8 @@
 pragma solidity >=0.7.5;
 pragma abicoder v2;
 
-import "../interface/IAction.sol";
-import "./Alliance.sol";
+import "./IAction.sol";
+import "./IAlliance.sol";
 
 contract Election {
     struct Voter {
@@ -23,7 +23,7 @@ contract Election {
     }
 
     address public owner;
-    Alliance impl = Alliance(owner);
+    IAlliance impl = IAlliance(owner);
 
     uint256 end_time;
 
@@ -64,7 +64,7 @@ contract Election {
         
         power = 1;
 
-        if (checkVoterAuthorization()) {
+        if (impl.isMember(msg.sender)) {
             if (authorized_votes[msg.sender].voted) {
                 proposals[authorized_votes[msg.sender].vote]
                     .vote_count -= authorized_votes[msg.sender].prevVotePower;
@@ -136,7 +136,7 @@ contract Election {
         
         power = 1;
 
-        if (checkVoterAuthorization()) {
+        if (impl.isMember(msg.sender)) {
             authorized_votes[msg.sender].discard = true;
             if (authorized_votes[msg.sender].voted) {
                 proposals[authorized_votes[msg.sender].vote]
@@ -162,10 +162,6 @@ contract Election {
             }
             discards += 1;
         }
-    }
-
-    function checkVoterAuthorization() public view returns (bool) {
-        return impl.members(msg.sender);
     }
 
     function invokeVotingResult() private {

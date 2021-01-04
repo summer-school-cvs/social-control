@@ -6,7 +6,7 @@ pragma abicoder v2;
 import "../interface/AllianceStorage.sol";
 import "../interface/IAlliance.sol";
 import "../interface/Owned.sol";
-import "./Election.sol";
+import "../interface/Election.sol";
 
 contract DefaultAllianceImplementation is
     AllianceStorage,
@@ -15,6 +15,10 @@ contract DefaultAllianceImplementation is
 {    
     constructor() {
         members[msg.sender].is_member = true;
+    }
+
+    function isMember(address val) public override returns(bool) {
+        return members[val].is_member;
     }
 
     function join(address val) public override returns (address) {
@@ -29,10 +33,8 @@ contract DefaultAllianceImplementation is
         proposals[1].description = "blablabla";
         proposals[1].won_action = cancel_membership_action;
 
-        Election election = new Election(proposals);
-
+        Election election = newElection(proposals);
         candidates_for_membership[val] = address(election);
-        elections[address(election)] = msg.sender;
 
         return address(election);
     }
@@ -53,10 +55,8 @@ contract DefaultAllianceImplementation is
         proposals[1].description = "Exclude candidate";
         proposals[1].won_action = member_exclude_action;
 
-        Election election = new Election(proposals);
-
+        Election election = newElection(proposals);
         candidates_for_exclusion[val] = address(election);
-        elections[address(election)] = msg.sender;
 
         return address(election);
     }
@@ -85,9 +85,7 @@ contract DefaultAllianceImplementation is
         proposals[1].description = "Don't update the implementation.";
         proposals[1].won_action = empty_action;
 
-        Election election = new Election(proposals);
-
-        elections[address(election)] = msg.sender;
+        Election election = newElection(proposals);
 
         return address(election);
     }
@@ -102,7 +100,19 @@ contract DefaultAllianceImplementation is
         require(success);
     }
 
+    function createElection(Election.Proposal[] memory proposals) public override returns(address) {
+        return address(newElection(proposals));
+    }
+
     function destroy() public onlyOwner override(IAlliance, Owned) {
         Owned.destroy();
+    }
+
+    function newElection(Election.Proposal[] memory proposals) internal returns(Election) {
+        Election election = new Election(proposals);
+
+        elections[address(election)] = msg.sender;
+
+        return election;
     }
 }
