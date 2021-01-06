@@ -17,7 +17,7 @@ contract AllianceStorage {
     mapping(string => IAction) actions;
 
     mapping(address => MemberInfo) public members_info;
-    address[] members;
+    address[] public members;
 
     // mapping(candidate, add action(votings))
     mapping(address => address) public candidates_for_membership;

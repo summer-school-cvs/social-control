@@ -18,8 +18,11 @@ contract DefaultAllianceImplementation is
     function isMember(address val) public view override returns(bool) {
         return members_info[val].is_member;
     }
+    function membersCount() public view override returns(uint256) {
+        return members.length;
+    }
 
-    function join(address val) public override returns (address) {
+    function join(address val) public override {
         Election.Proposal[] memory proposals = new Election.Proposal[](2);
 
         proposals[0].name = "Accept";
@@ -33,11 +36,9 @@ contract DefaultAllianceImplementation is
 
         Election election = newElection(proposals);
         candidates_for_membership[val] = address(election);
-
-        return address(election);
     }
 
-    function exclude(address val) public override onlyMember returns (address) {
+    function exclude(address val) public override onlyMember {
         require(
             msg.sender != val,
             "You can't exclude yourself, choose 'leave' option"
@@ -55,23 +56,19 @@ contract DefaultAllianceImplementation is
 
         Election election = newElection(proposals);
         candidates_for_exclusion[val] = address(election);
-
-        return address(election);
     }
 
-    function leave() public override onlyMember returns (address) {
-        (bool success,) = address(actions["leave_alliace"]).
-            delegatecall(abi.encodeWithSignature("execute(address payable)", msg.sender));
-        require(success);
-
-        return address(0);
+    function leave() public override onlyMember {
+        (bool success,) = address(actions["leave_alliance"]).
+            delegatecall(abi.encodeWithSignature("execute(address)", msg.sender));
+        require(success, "Can't call remove action");
     }
 
     function delegateTo(address val) public override onlyMember {}
 
     function undelegateFrom(address val) public override onlyMember {}
 
-    function updateImplementation(address val) public override onlyMember returns (address) {
+    function updateImplementation(address val) public override onlyMember {
         Election.Proposal[] memory proposals = new Election.Proposal[](2);
 
         proposals[0].name = "Update";
@@ -83,9 +80,7 @@ contract DefaultAllianceImplementation is
         proposals[1].description = "Don't update the implementation.";
         proposals[1].won_action = actions["no_action"];
 
-        Election election = newElection(proposals);
-
-        return address(election);
+        // Election election = newElection(proposals);
     }
 
     function processVotingResult(uint256) public override {
@@ -98,8 +93,7 @@ contract DefaultAllianceImplementation is
         require(success);
     }
 
-    function createElection(Election.Proposal[] memory proposals) public override returns(address) {
-        return address(newElection(proposals));
+    function createElection(Election.Proposal[] memory proposals) public override {
     }
 
     function destroy() public onlyOwner override(IAlliance, Owned) {

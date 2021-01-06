@@ -29,29 +29,27 @@ contract Alliance is AllianceStorage, IAlliance {
     }
 
     function isMember(address val) public view override returns(bool) {
-        (bool success, bytes memory result) = address(implementation).
-            staticcall(abi.encodeWithSignature("isMember(address)", val));
-        require(success);        
-        return abi.decode(result, (bool));
+        // TODO: delegatecall. But it's view...
+        return members_info[val].is_member;
+    }
+    function membersCount() public view override returns(uint256) {
+        return members.length;
     }
     
-    function join(address val) public override returns(address) {
-        (bool success, bytes memory result) = address(implementation).
+    function join(address val) public override {
+        (bool success, ) = address(implementation).
             delegatecall(abi.encodeWithSignature("join(address)", val));
         require(success);        
-        return abi.decode(result, (address));
     }
-    function exclude(address val) public override onlyMember returns(address) {
-        (bool success, bytes memory result) = address(implementation).
+    function exclude(address val) public override onlyMember {
+        (bool success, ) = address(implementation).
             delegatecall(abi.encodeWithSignature("exclude(address)", val));
         require(success);
-        return abi.decode(result, (address));
     }
-    function leave() public override  returns(address) {
-        (bool success, bytes memory result) = address(implementation).
+    function leave() public override  {
+        (bool success, ) = address(implementation).
             delegatecall(abi.encodeWithSignature("leave()"));
         require(success);
-        return abi.decode(result, (address));
     }
     
     function delegateTo(address val) public override {
@@ -65,10 +63,9 @@ contract Alliance is AllianceStorage, IAlliance {
         require(success);
     }
     
-    function updateImplementation(address val) public override returns(address) {
-        (bool success, bytes memory result) = address(implementation).delegatecall(abi.encodeWithSignature("updateImplementation(address)", val));
+    function updateImplementation(address val) public override {
+        (bool success, ) = address(implementation).delegatecall(abi.encodeWithSignature("updateImplementation(address)", val));
         require(success);
-        return abi.decode(result, (address));
     }
     
     function processVotingResult(uint256 id) public override {
@@ -78,13 +75,12 @@ contract Alliance is AllianceStorage, IAlliance {
     }
 
 
-    function createElection(Election.Proposal[] memory proposals) public override returns(address) {
-        (bool success, bytes memory result) = address(implementation).delegatecall(abi.encodeWithSignature("createElection((Election.Proposal[] memory)", proposals));
+    function createElection(Election.Proposal[] memory proposals) public override {
+        (bool success, ) = address(implementation).delegatecall(abi.encodeWithSignature("createElection((Election.Proposal[] memory)", proposals));
         require(success);
-        return abi.decode(result, (address));
     }
     
-    function destroy() public override {
+    function destroy() public override onlyMember {
         if(members.length == 1) {
             actions["accept_candidate"].destroy();
             actions["reject_candidate"].destroy();
