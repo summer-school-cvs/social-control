@@ -9,6 +9,7 @@ import "./DefaultAllianceImplementation.sol";
 import "./actions/AddMember.sol";
 import "./actions/EmptyAction.sol";
 import "./actions/RemoveCandidateForMembership.sol";
+import "./actions/RemoveCandidateForExclusion.sol";
 import "./actions/RemoveMember.sol";
 import "./actions/UpdateImpl.sol";
 
@@ -22,7 +23,8 @@ contract Alliance is AllianceStorage, IAlliance {
         actions["accept_candidate"] = new AddMember();
         actions["reject_candidate"] = new RemoveCandidateForMembership();
         actions["accept_exclusion"] = new RemoveMember();
-        actions["reject_exclusion"] = new EmptyAction(); // TODO
+        actions["reject_exclusion"] = new RemoveCandidateForExclusion();
+
         actions["update_impl"]      = new UpdateImpl();
         actions["no_acton"]         = new EmptyAction();
         actions["leave_alliance"]   = new RemoveMember();
@@ -68,9 +70,9 @@ contract Alliance is AllianceStorage, IAlliance {
         require(success);
     }
     
-    function processVotingResult(uint256 id) public override {
+    function processVotingResult(address addr) public override {
         (bool success,) = address(implementation).
-            delegatecall(abi.encodeWithSignature("processVotingResult(uint256)", id));
+            delegatecall(abi.encodeWithSignature("processVotingResult(address)", addr));
         require(success);
     }
 

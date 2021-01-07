@@ -9,7 +9,7 @@ import "./Owned.sol";
 
 abstract contract IElection is Owned {
     struct Voter {
-        uint256 vote;
+        uint vote;
         bool voted;
     }
 
@@ -58,7 +58,7 @@ abstract contract IElection is Owned {
             no_winner_action = _no_winner_action;
     }
 
-    function vote(uint256 id) public {
+    function vote(uint id) public {
         require(id >= 0 && id < proposals.length,
             "Incorrect ID of the proposal.");
 
@@ -71,7 +71,7 @@ abstract contract IElection is Owned {
 
     function winner() view public virtual returns(address data, IAction);
 
-    function addVote(address voter, uint256 id) internal {
+    function addVote(address voter, uint id) internal {
         require(block.timestamp < end_time, "Election is over.");
         if(!votes[voter].voted) {
             voters.push(voter);

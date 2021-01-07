@@ -33,11 +33,18 @@ contract Election is IElection {
         uint discard_index = proposals.length;
         (uint256[] memory distribution, uint256 quorum) = distributionOfVotes();
 
-        if(discard_threshold <= distribution[discard_index])
+        uint256 members_cnt = alliance.membersCount();
+
+        uint256 d_th = discard_threshold < members_cnt ? discard_threshold: members_cnt;
+        uint256 q_th = quorum_threshold  < members_cnt ? quorum_threshold : members_cnt;
+        uint256 w_th = win_threshold     < members_cnt ? win_threshold    : members_cnt;
+
+        if(d_th <= distribution[discard_index])
             return (address(this), discard_action);
         
-        if(quorum <= quorum_threshold)
+        if(quorum < q_th)
             return (address(this), no_quorum_action);
+
         bool no_winner = true;
         uint id = 0;
         uint256 votes_count = 0;
@@ -47,13 +54,13 @@ contract Election is IElection {
                 votes_count = distribution[i];
                 no_winner = false;
             }
+            else if( votes_count == distribution[i])
+                no_winner = true;
         }
-        if(no_winner)
+        if(no_winner
+           || votes_count < w_th
+           || votes_count <= distribution[discard_index])
             return (address(this), no_winner_action);
-        if(votes_count > win_threshold)
-            return (address(this), no_winner_action);
-        if(votes_count <= distribution[discard_index])
-            return (address(this), discard_action);
 
         return (proposals[id].action_data, proposals[id].won_action);
     }
@@ -65,13 +72,14 @@ contract Election is IElection {
         uint256[] memory distribution = new uint256[](discard_index + 1);
 
         for(uint i = 0; i < voters.length; ++i) {
+                
             address cur_voter = voters[i];
             if(!alliance.isMember(cur_voter))
                 continue;
 
             if(votes[cur_voter].voted) {
-                distribution[votes[cur_voter].vote] += 1;
                 quorum += 1;
+                distribution[votes[cur_voter].vote] += 1;
             }
         }
 

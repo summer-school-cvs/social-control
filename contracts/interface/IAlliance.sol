@@ -3,7 +3,7 @@
 pragma solidity >=0.5.0;
 pragma abicoder v2;
 
-import "./Election.sol";
+import "./IElection.sol";
 
 abstract contract IAlliance {
     function isMember(address) public view virtual returns(bool);
@@ -18,9 +18,9 @@ abstract contract IAlliance {
     
     function updateImplementation(address) public virtual;
     
-    function processVotingResult(uint256 id) public virtual;
+    function processVotingResult(address) public virtual;
 
-    function createElection(Election.Proposal[] memory proposals) public virtual;
+    function createElection(IElection.Proposal[] memory proposals) public virtual;
 
     function destroy() public virtual;
 }

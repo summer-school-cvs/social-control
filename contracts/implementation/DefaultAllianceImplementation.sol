@@ -23,38 +23,34 @@ contract DefaultAllianceImplementation is
     }
 
     function join(address val) public override {
-        Election.Proposal[] memory proposals = new Election.Proposal[](2);
+        require(!isMember(val), "Already a member of the alliance.");
 
-        proposals[0].name = "Accept";
-        proposals[0].description = "blablabla";
-        proposals[0].action_data = val;
-        proposals[0].won_action = actions["accept_candidate"];
+        Election election =  memberElection(val,
+                                            "Accept the candidate",
+                                            "",
+                                            actions["accept_candidate"],
+                                            "Reject the candidate",
+                                            "",
+                                            actions["reject_candidate"]);
 
-        proposals[1].name = "Not accept";
-        proposals[1].description = "blablabla";
-        proposals[1].won_action = actions["reject_candidate"];
-
-        Election election = newElection(proposals);
         candidates_for_membership[val] = address(election);
     }
 
     function exclude(address val) public override onlyMember {
+        require(isMember(val), "Not a member of the alliance.");
         require(
             msg.sender != val,
             "You can't exclude yourself, choose 'leave' option"
         );
-        Election.Proposal[] memory proposals = new Election.Proposal[](2);
 
-        proposals[0].name = "Keep";
-        proposals[0].description = "Keep candidate's membership";
-        proposals[0].action_data = val;
-        proposals[0].won_action = actions["accept_exclusion"];
+        Election election =  memberElection(val,
+                                            "Keep",
+                                            "Keep candidate's membership",
+                                            actions["reject_exclusion"],
+                                            "Exclude",
+                                            "Exclude candidate",
+                                            actions["reject_exclusion"]);
 
-        proposals[1].name = "Exclude";
-        proposals[1].description = "Exclude candidate";
-        proposals[1].won_action = actions["reject_exclusion"];
-
-        Election election = newElection(proposals);
         candidates_for_exclusion[val] = address(election);
     }
 
@@ -83,14 +79,19 @@ contract DefaultAllianceImplementation is
         // Election election = newElection(proposals);
     }
 
-    function processVotingResult(uint256) public override {
-        Election election = Election(msg.sender);
+    function processVotingResult(address el_addr) public override {
+        address el_creator = elections[el_addr];
+        require(el_creator != address(0), 
+            "The election of another alliance cannot be processed.");
+        IElection election = IElection(el_addr);
 
-        // candidate address, action for candidate
         (address data, IAction action) = election.winner();
         (bool success,) = address(action).
-            delegatecall(abi.encodeWithSignature("execute(address payable)", data));
+            delegatecall(abi.encodeWithSignature("execute(address)", data));
         require(success);
+
+        election.destroy();
+        elections[el_addr] = address(0);
     }
 
     function createElection(Election.Proposal[] memory proposals) public override {
@@ -98,6 +99,40 @@ contract DefaultAllianceImplementation is
 
     function destroy() public onlyOwner override(IAlliance, Owned) {
         Owned.destroy();
+    }
+
+    function memberElection(address candidate,
+                            string memory accept_name,
+                            string memory accept_desc,
+                            IAction accept_action,
+                            string memory reject_name,
+                            string memory reject_desc,
+                            IAction reject_action) internal returns(Election) {
+        Election.Proposal[] memory proposals = new Election.Proposal[](2);
+
+        proposals[0].name        = accept_name;
+        proposals[0].description = accept_desc;
+        proposals[0].action_data = candidate; 
+        proposals[0].won_action  = accept_action;
+
+        proposals[1].name        = reject_name;
+        proposals[1].description = reject_desc;
+        proposals[1].action_data = candidate;
+        proposals[1].won_action  = reject_action;
+
+        Election election = new Election(proposals,
+                reject_action,
+                reject_action,
+                reject_action,
+                block.timestamp + 1000,
+                5,
+                5,
+                1
+            );
+
+        elections[address(election)] = msg.sender;
+
+        return election;
     }
 
     function newElection(Election.Proposal[] memory proposals) internal returns(Election) {
