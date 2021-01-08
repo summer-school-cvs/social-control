@@ -2,52 +2,55 @@ var Alliance = artifacts.require("Alliance")
 var IElection = artifacts.require("IElection")
 
 contract("members_test", (accounts) => {
-    it("Add members", async () => {
+    it("Add 9 members and remove all.", async () => {
         alliance = await Alliance.new({ from: accounts[0] });
         assert.isOk(alliance, "Contract was not deployed.");
 
         members_count = await alliance.membersCount();
         assert.equal(members_count, 1, "The new alliance must have at least one member.");
 
-        ///////////////////////////////////////////////////////////////////////////////////////////
-        // join 2
-        await alliance.join.sendTransaction(accounts[1]);
-        election_add = await alliance.candidates_for_membership(accounts[1]);
-        election = await IElection.at(election_add);
-        await election.vote.sendTransaction(0, { from: accounts[0] });
 
-        await alliance.processVotingResult.sendTransaction(election_add, { from: accounts[0] });
+        for (let i = 1; i < 10; i++) {
+            await alliance.join.sendTransaction(accounts[i]);
+            election_add = await alliance.candidates_for_membership(accounts[i]);
+            election = await IElection.at(election_add);
+            
+            let votes = i < 5 ? i : 5;
+            for (let j = 0; j < votes; j++) {
+                await election.vote.sendTransaction(0, { from: accounts[j] });
+            }
 
-        members_count = await alliance.membersCount();
-        assert.equal(members_count, 2, "The second member has not been added.");
+            await alliance.processVotingResult.sendTransaction(election_add, { from: accounts[0] });
 
-        ///////////////////////////////////////////////////////////////////////////////////////////
-        // join 3 fail
-        await alliance.join.sendTransaction(accounts[2]);
-        election_add = await alliance.candidates_for_membership(accounts[2]);
-        election = await IElection.at(election_add);
-        await election.vote.sendTransaction(0, { from: accounts[0] });
+            members_count = await alliance.membersCount();
+            assert.equal(members_count, i + 1, "The member has not been added.");
+        }
 
-        await alliance.processVotingResult.sendTransaction(election_add, { from: accounts[0] });
+        for (let i = 9; i > 0; i--) {
+            await alliance.exclude.sendTransaction(accounts[i]);
+            election_excl = await alliance.candidates_for_exclusion(accounts[i]);
+            election = await IElection.at(election_excl);
+            
+            let votes = i < 5 ? i : 5;
+            for (let j = 0; j < votes; j++) {
+                await election.vote.sendTransaction(1, { from: accounts[j] });
+            }
 
-        members_count = await alliance.membersCount();
-        assert.equal(members_count, 2, "The member shouldn't have been added.");
+            await alliance.processVotingResult.sendTransaction(election_excl, { from: accounts[0] });
 
-        // join 2 success
-        await alliance.join.sendTransaction(accounts[2]);
-        election_add = await alliance.candidates_for_membership(accounts[2]);
-        election = await IElection.at(election_add);
-        await election.vote.sendTransaction(0, { from: accounts[0] });
-        await election.vote.sendTransaction(0, { from: accounts[1] });
+            members_count = await alliance.membersCount();
+            assert.equal(members_count, i, "The member has not been excluded.");
+        }
 
-        await alliance.processVotingResult.sendTransaction(election_add, { from: accounts[0] });
-        
-        members_count = await alliance.membersCount();
-        assert.equal(members_count, 3, "The 3 member has not been added.");
+        try {
+            await alliance.exclude.sendTransaction(accounts[0]);
+            throw null;
+        }
+        catch (error) {
+            assert(error, "Excluding the last member through voting is a mistake.")
+        }
 
-        ////////////////////////////////////////////////////
-
-        await alliance.destroy({ from: accounts[0] });
-        // TODO: Check if it is destroyed. 
+        alliance.leave.sendTransaction({ from: accounts[0] });
+        // TODO: Check if it is destroyed.
     })
 })

@@ -20,6 +20,10 @@ abstract contract IElection is Owned {
         IAction won_action;
     }
 
+    // TODO: mast be constant
+    string public name;
+    string public description;
+
     uint256 public immutable end_time;
 
     IAction public immutable no_quorum_action;
@@ -34,7 +38,9 @@ abstract contract IElection is Owned {
     address[] public                 voters;
     mapping(address => Voter) public votes;
 
-    constructor(Proposal[] memory _proposals,
+    constructor(string memory _name,
+                string memory _description,
+                Proposal[] memory _proposals,
                 uint256 _end_time,
                 IAction _no_quorum_action,
                 IAction _discard_action  ,
@@ -47,6 +53,9 @@ abstract contract IElection is Owned {
                 "The number of proposals must be greater than 1.");
 
             alliance = IAlliance(owner());
+
+            name = _name;
+            description = _description;
 
             for(uint i = 0; i < _proposals.length; ++i)
                 proposals.push(_proposals[i]);

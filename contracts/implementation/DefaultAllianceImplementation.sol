@@ -25,7 +25,8 @@ contract DefaultAllianceImplementation is
     function join(address val) public override {
         require(!isMember(val), "Already a member of the alliance.");
 
-        Election election =  memberElection(val,
+        Election election =  memberElection("Add", "", 
+                                            val,
                                             "Accept the candidate",
                                             "",
                                             actions["accept_candidate"],
@@ -38,18 +39,17 @@ contract DefaultAllianceImplementation is
 
     function exclude(address val) public override onlyMember {
         require(isMember(val), "Not a member of the alliance.");
-        require(
-            msg.sender != val,
-            "You can't exclude yourself, choose 'leave' option"
-        );
+        require(msg.sender != val,
+            "You can't exclude yourself, choose 'leave' option");
 
-        Election election =  memberElection(val,
+        Election election =  memberElection("Exclude", "",
+                                            val,
                                             "Keep",
                                             "Keep candidate's membership",
                                             actions["reject_exclusion"],
                                             "Exclude",
                                             "Exclude candidate",
-                                            actions["reject_exclusion"]);
+                                            actions["accept_exclusion"]);
 
         candidates_for_exclusion[val] = address(election);
     }
@@ -101,7 +101,9 @@ contract DefaultAllianceImplementation is
         Owned.destroy();
     }
 
-    function memberElection(address candidate,
+    function memberElection(string memory name,
+                            string memory desc,
+                            address candidate,
                             string memory accept_name,
                             string memory accept_desc,
                             IAction accept_action,
@@ -120,15 +122,16 @@ contract DefaultAllianceImplementation is
         proposals[1].action_data = candidate;
         proposals[1].won_action  = reject_action;
 
-        Election election = new Election(proposals,
-                reject_action,
-                reject_action,
-                reject_action,
-                block.timestamp + 1000,
-                5,
-                5,
-                1
-            );
+        Election election = new Election(name,
+                                         desc,
+                                         proposals,
+                                         reject_action,
+                                         reject_action,
+                                         reject_action,
+                                         block.timestamp + 1000,
+                                         5,
+                                         5,
+                                         1);
 
         elections[address(election)] = msg.sender;
 
@@ -136,7 +139,7 @@ contract DefaultAllianceImplementation is
     }
 
     function newElection(Election.Proposal[] memory proposals) internal returns(Election) {
-        Election election = new Election(proposals,
+        Election election = new Election("", "", proposals,
                 actions["no_acton"],
                 actions["no_acton"],
                 actions["no_acton"],
