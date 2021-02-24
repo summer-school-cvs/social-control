@@ -6,7 +6,7 @@ pragma abicoder v2;
 import "../interface/AllianceStorage.sol";
 import "../interface/IAlliance.sol";
 import "../interface/Owned.sol";
-import "../interface/Election.sol";
+import "../implementation/elections/AbsoluteElection.sol";
 
 contract DefaultAllianceImplementation is
     AllianceStorage,
@@ -94,7 +94,7 @@ contract DefaultAllianceImplementation is
         elections[el_addr] = address(0);
     }
 
-    function createElection(Election.Proposal[] memory proposals) public override {
+    function createElection(IElection.Proposal[] memory proposals) public override {
     }
 
     function destroy() public onlyOwner override(IAlliance, Owned) {
@@ -109,8 +109,8 @@ contract DefaultAllianceImplementation is
                             IAction accept_action,
                             string memory reject_name,
                             string memory reject_desc,
-                            IAction reject_action) internal returns(Election) {
-        Election.Proposal[] memory proposals = new Election.Proposal[](2);
+                            IAction reject_action) internal returns(IElection) {
+        IElection.Proposal[] memory proposals = new Election.Proposal[](2);
 
         proposals[0].name        = accept_name;
         proposals[0].description = accept_desc;
@@ -122,7 +122,7 @@ contract DefaultAllianceImplementation is
         proposals[1].action_data = candidate;
         proposals[1].won_action  = reject_action;
 
-        Election election = new Election(name,
+        IElection election = new AbsoluteElection(name,
                                          desc,
                                          proposals,
                                          reject_action,
@@ -138,8 +138,8 @@ contract DefaultAllianceImplementation is
         return election;
     }
 
-    function newElection(Election.Proposal[] memory proposals) internal returns(Election) {
-        Election election = new Election("", "", proposals,
+    function newElection(IElection.Proposal[] memory proposals) internal returns(IElection) {
+        IElection election = new AbsoluteElection("", "", proposals,
                 actions["no_acton"],
                 actions["no_acton"],
                 actions["no_acton"],

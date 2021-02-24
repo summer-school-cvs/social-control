@@ -3,9 +3,9 @@
 pragma solidity >=0.7.5;
 pragma abicoder v2;
 
-import "../interface/IElection.sol";
+import "../../interface/IElection.sol";
 
-contract Election is IElection {
+contract AbsoluteElection is IElection {
     uint256 public immutable discard_threshold;
     uint256 public immutable quorum_threshold;
     uint256 public immutable win_threshold;

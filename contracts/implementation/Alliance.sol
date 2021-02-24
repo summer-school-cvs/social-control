@@ -77,7 +77,7 @@ contract Alliance is AllianceStorage, IAlliance {
     }
 
 
-    function createElection(Election.Proposal[] memory proposals) public override {
+    function createElection(IElection.Proposal[] memory proposals) public override {
         (bool success, ) = address(implementation).delegatecall(abi.encodeWithSignature("createElection((Election.Proposal[] memory)", proposals));
         require(success);
     }
